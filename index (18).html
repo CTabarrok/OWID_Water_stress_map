@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freshwater Withdrawals as a Share of Internal Resources</title>
+<meta property="og:title" content="Freshwater Withdrawals as a Share of Internal Resources">
+<meta property="og:description" content="Interactive map showing freshwater withdrawals as a percentage of renewable internal resources, by country.">
+<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body {
+    font-family: "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: #fff;
+    color: #1d1d1d;
+  }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 14px 16px 6px;
+  }
+  .header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px; margin-bottom: 2px; }
+  h1 {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #1d1d1d;
+  }
+  .year-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: #555;
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .subtitle {
+    font-size: 12.5px;
+    color: #6e7781;
+    margin-bottom: 4px;
+    line-height: 1.35;
+  }
+  #map { width: 100%; }
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 2px 0 8px;
+  }
+  .source {
+    font-size: 10.5px;
+    color: #98a0a6;
+    line-height: 1.4;
+  }
+  .source a { color: #6e7781; text-decoration: underline; }
+  .legend-note {
+    font-size: 10.5px;
+    color: #b0b6bc;
+    font-style: italic;
+  }
+  /* Loading state */
+  #loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: #aaa;
+    font-size: 14px;
+  }
+  #loading .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid #ddd;
+    border-top-color: #888;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Freshwater withdrawals as a share of internal resources</h1>
+    <span class="year-badge">2022</span>
+  </div>
+  <p class="subtitle">Freshwater withdrawn by all sectors as a % of total renewable freshwater resources.</p>
+  <div id="loading"><div class="spinner"></div>Loading map&hellip;</div>
+  <div id="map"></div>
+  <div class="footer">
+    <span class="source">Source: UN FAO via <a href="https://ourworldindata.org/grapher/freshwater-withdrawals-as-a-share-of-internal-resources" target="_blank" rel="noopener">Our World in Data</a></span>
+    <span class="legend-note">Values &gt;100% = withdrawals exceed renewable supply</span>
+  </div>
+</div>
+<script>
+const rawData = [{"country": "Afghanistan", "code": "AFG", "year": 2022, "value": 54.76}, {"country": "Algeria", "code": "DZA", "year": 2022, "value": 144.81}, {"country": "Angola", "code": "AGO", "year": 2022, "value": 1.87}, {"country": "Antigua and Barbuda", "code": "ATG", "year": 2022, "value": 8.46}, {"country": "Argentina", "code": "ARG", "year": 2022, "value": 10.46}, {"country": "Armenia", "code": "ARM", "year": 2022, "value": 61.97}, {"country": "Australia", "code": "AUS", "year": 2022, "value": 4.67}, {"country": "Austria", "code": "AUT", "year": 2022, "value": 8.68}, {"country": "Azerbaijan", "code": "AZE", "year": 2022, "value": 57.53}, {"country": "Bahrain", "code": "BHR", "year": 2022, "value": 133.71}, {"country": "Bangladesh", "code": "BGD", "year": 2022, "value": 5.72}, {"country": "Barbados", "code": "BRB", "year": 2022, "value": 87.5}, {"country": "Belarus", "code": "BLR", "year": 2022, "value": 4.66}, {"country": "Belgium", "code": "BEL", "year": 2022, "value": 51.88}, {"country": "Belize", "code": "BLZ", "year": 2022, "value": 1.26}, {"country": "Benin", "code": "BEN", "year": 2022, "value": 0.98}, {"country": "Bermuda", "code": "BMU", "year": 2022, "value": 4.24}, {"country": "Bhutan", "code": "BTN", "year": 2022, "value": 1.41}, {"country": "Bolivia", "code": "BOL", "year": 2022, "value": 0.2}, {"country": "Bosnia and Herzegovina", "code": "BIH", "year": 2022, "value": 2.07}, {"country": "Botswana", "code": "BWA", "year": 2022, "value": 2.23}, {"country": "Brazil", "code": "BRA", "year": 2022, "value": 1.5}, {"country": "Brunei", "code": "BRN", "year": 2022, "value": 3.47}, {"country": "Bulgaria", "code": "BGR", "year": 2022, "value": 40.24}, {"country": "Burkina Faso", "code": "BFA", "year": 2022, "value": 7.82}, {"country": "Burundi", "code": "BDI", "year": 2022, "value": 10.19}, {"country": "Cambodia", "code": "KHM", "year": 2022, "value": 1.04}, {"country": "Cameroon", "code": "CMR", "year": 2022, "value": 1.56}, {"country": "Canada", "code": "CAN", "year": 2022, "value": 3.72}, {"country": "Cape Verde", "code": "CPV", "year": 2022, "value": 59.68}, {"country": "Central African Republic", "code": "CAF", "year": 2022, "value": 0.34}, {"country": "Chad", "code": "TCD", "year": 2022, "value": 4.29}, {"country": "Chile", "code": "CHL", "year": 2022, "value": 8.98}, {"country": "China", "code": "CHN", "year": 2022, "value": 41.52}, {"country": "Colombia", "code": "COL", "year": 2022, "value": 3.63}, {"country": "Comoros", "code": "COM", "year": 2022, "value": 0.83}, {"country": "Congo", "code": "COG", "year": 2022, "value": 0.03}, {"country": "Costa Rica", "code": "CRI", "year": 2022, "value": 5.88}, {"country": "Cote d'Ivoire", "code": "CIV", "year": 2022, "value": 5.09}, {"country": "Croatia", "code": "HRV", "year": 2022, "value": 1.51}, {"country": "Cuba", "code": "CUB", "year": 2022, "value": 23.94}, {"country": "Cyprus", "code": "CYP", "year": 2022, "value": 30.48}, {"country": "Czechia", "code": "CZE", "year": 2022, "value": 21.97}, {"country": "Democratic Republic of Congo", "code": "COD", "year": 2022, "value": 0.23}, {"country": "Denmark", "code": "DNK", "year": 2022, "value": 25.27}, {"country": "Djibouti", "code": "DJI", "year": 2022, "value": 6.33}, {"country": "Dominica", "code": "DMA", "year": 2022, "value": 10.0}, {"country": "Dominican Republic", "code": "DOM", "year": 2022, "value": 39.55}, {"country": "East Timor", "code": "TLS", "year": 2022, "value": 28.27}, {"country": "Ecuador", "code": "ECU", "year": 2022, "value": 6.78}, {"country": "Egypt", "code": "EGY", "year": 2022, "value": 141.17}, {"country": "El Salvador", "code": "SLV", "year": 2022, "value": 12.09}, {"country": "Equatorial Guinea", "code": "GNQ", "year": 2022, "value": 0.18}, {"country": "Eritrea", "code": "ERI", "year": 2022, "value": 11.18}, {"country": "Estonia", "code": "EST", "year": 2022, "value": 13.05}, {"country": "Eswatini", "code": "SWZ", "year": 2022, "value": 77.56}, {"country": "Ethiopia", "code": "ETH", "year": 2022, "value": 32.26}, {"country": "Fiji", "code": "FJI", "year": 2022, "value": 0.3}, {"country": "Finland", "code": "FIN", "year": 2022, "value": 7.11}, {"country": "France", "code": "FRA", "year": 2022, "value": 21.38}, {"country": "Gabon", "code": "GAB", "year": 2022, "value": 0.5}, {"country": "Gambia", "code": "GMB", "year": 2022, "value": 2.21}, {"country": "Georgia", "code": "GEO", "year": 2022, "value": 4.21}, {"country": "Germany", "code": "DEU", "year": 2022, "value": 35.35}, {"country": "Ghana", "code": "GHA", "year": 2022, "value": 6.31}, {"country": "Greece", "code": "GRC", "year": 2022, "value": 20.33}, {"country": "Grenada", "code": "GRD", "year": 2022, "value": 7.05}, {"country": "Guatemala", "code": "GTM", "year": 2022, "value": 5.74}, {"country": "Guinea", "code": "GIN", "year": 2022, "value": 1.37}, {"country": "Guinea-Bissau", "code": "GNB", "year": 2022, "value": 1.5}, {"country": "Guyana", "code": "GUY", "year": 2022, "value": 3.3}, {"country": "Haiti", "code": "HTI", "year": 2022, "value": 13.38}, {"country": "Honduras", "code": "HND", "year": 2022, "value": 4.62}, {"country": "Hungary", "code": "HUN", "year": 2022, "value": 8.11}, {"country": "Iceland", "code": "ISL", "year": 2022, "value": 0.39}, {"country": "India", "code": "IND", "year": 2022, "value": 66.49}, {"country": "Indonesia", "code": "IDN", "year": 2022, "value": 29.7}, {"country": "Iran", "code": "IRN", "year": 2022, "value": 81.29}, {"country": "Iraq", "code": "IRQ", "year": 2022, "value": 59.58}, {"country": "Ireland", "code": "IRL", "year": 2022, "value": 8.05}, {"country": "Israel", "code": "ISR", "year": 2022, "value": 129.67}, {"country": "Italy", "code": "ITA", "year": 2022, "value": 29.77}, {"country": "Jamaica", "code": "JAM", "year": 2022, "value": 12.38}, {"country": "Japan", "code": "JPN", "year": 2022, "value": 36.64}, {"country": "Jordan", "code": "JOR", "year": 2022, "value": 105.2}, {"country": "Kazakhstan", "code": "KAZ", "year": 2022, "value": 34.63}, {"country": "Kenya", "code": "KEN", "year": 2022, "value": 33.24}, {"country": "Kuwait", "code": "KWT", "year": 2022, "value": 3850.5}, {"country": "Kyrgyzstan", "code": "KGZ", "year": 2022, "value": 50.04}, {"country": "Laos", "code": "LAO", "year": 2022, "value": 4.79}, {"country": "Latvia", "code": "LVA", "year": 2022, "value": 1.02}, {"country": "Lebanon", "code": "LBN", "year": 2022, "value": 58.79}, {"country": "Lesotho", "code": "LSO", "year": 2022, "value": 2.57}, {"country": "Liberia", "code": "LBR", "year": 2022, "value": 0.26}, {"country": "Libya", "code": "LBY", "year": 2022, "value": 817.14}, {"country": "Lithuania", "code": "LTU", "year": 2022, "value": 1.83}, {"country": "Luxembourg", "code": "LUX", "year": 2022, "value": 3.96}, {"country": "Madagascar", "code": "MDG", "year": 2022, "value": 11.26}, {"country": "Malawi", "code": "MWI", "year": 2022, "value": 17.5}, {"country": "Malaysia", "code": "MYS", "year": 2022, "value": 3.44}, {"country": "Maldives", "code": "MDV", "year": 2022, "value": 15.67}, {"country": "Mali", "code": "MLI", "year": 2022, "value": 8.0}, {"country": "Malta", "code": "MLT", "year": 2022, "value": 72.6}, {"country": "Mauritania", "code": "MRT", "year": 2022, "value": 13.25}, {"country": "Mauritius", "code": "MUS", "year": 2022, "value": 22.97}, {"country": "Mexico", "code": "MEX", "year": 2022, "value": 44.95}, {"country": "Moldova", "code": "MDA", "year": 2022, "value": 12.56}, {"country": "Mongolia", "code": "MNG", "year": 2022, "value": 3.4}, {"country": "Morocco", "code": "MAR", "year": 2022, "value": 50.75}, {"country": "Mozambique", "code": "MOZ", "year": 2022, "value": 1.75}, {"country": "Myanmar", "code": "MMR", "year": 2022, "value": 5.8}, {"country": "Namibia", "code": "NAM", "year": 2022, "value": 0.31}, {"country": "Nepal", "code": "NPL", "year": 2022, "value": 8.31}, {"country": "Netherlands", "code": "NLD", "year": 2022, "value": 16.66}, {"country": "New Zealand", "code": "NZL", "year": 2022, "value": 8.05}, {"country": "Nicaragua", "code": "NIC", "year": 2022, "value": 2.22}, {"country": "Niger", "code": "NER", "year": 2022, "value": 11.02}, {"country": "Nigeria", "code": "NGA", "year": 2022, "value": 9.67}, {"country": "North Korea", "code": "PRK", "year": 2022, "value": 27.74}, {"country": "North Macedonia", "code": "MKD", "year": 2022, "value": 52.55}, {"country": "Norway", "code": "NOR", "year": 2022, "value": 2.01}, {"country": "Oman", "code": "OMN", "year": 2022, "value": 116.71}, {"country": "Pakistan", "code": "PAK", "year": 2022, "value": 109.99}, {"country": "Palestine", "code": "PSE", "year": 2022, "value": 48.11}, {"country": "Panama", "code": "PAN", "year": 2022, "value": 0.9}, {"country": "Papua New Guinea", "code": "PNG", "year": 2022, "value": 0.13}, {"country": "Paraguay", "code": "PRY", "year": 2022, "value": 1.84}, {"country": "Peru", "code": "PER", "year": 2022, "value": 4.83}, {"country": "Philippines", "code": "PHL", "year": 2022, "value": 27.83}, {"country": "Poland", "code": "POL", "year": 2022, "value": 32.49}, {"country": "Portugal", "code": "PRT", "year": 2022, "value": 12.32}, {"country": "Puerto Rico", "code": "PRI", "year": 2022, "value": 19.54}, {"country": "Qatar", "code": "QAT", "year": 2022, "value": 431.03}, {"country": "Reunion", "code": "REU", "year": 2022, "value": 4.3}, {"country": "Romania", "code": "ROU", "year": 2022, "value": 7.63}, {"country": "Russia", "code": "RUS", "year": 2022, "value": 4.12}, {"country": "Rwanda", "code": "RWA", "year": 2022, "value": 20.2}, {"country": "Saint Kitts and Nevis", "code": "KNA", "year": 2022, "value": 50.83}, {"country": "Saint Lucia", "code": "LCA", "year": 2022, "value": 14.3}, {"country": "Saint Vincent and the Grenadines", "code": "VCT", "year": 2022, "value": 7.9}, {"country": "Sao Tome and Principe", "code": "STP", "year": 2022, "value": 1.88}, {"country": "Saudi Arabia", "code": "SAU", "year": 2022, "value": 974.17}, {"country": "Senegal", "code": "SEN", "year": 2022, "value": 16.28}, {"country": "Serbia", "code": "SRB", "year": 2022, "value": 5.74}, {"country": "Sierra Leone", "code": "SLE", "year": 2022, "value": 0.5}, {"country": "Singapore", "code": "SGP", "year": 2022, "value": 33.26}, {"country": "Slovakia", "code": "SVK", "year": 2022, "value": 2.43}, {"country": "Slovenia", "code": "SVN", "year": 2022, "value": 5.59}, {"country": "Somalia", "code": "SOM", "year": 2022, "value": 24.53}, {"country": "South Africa", "code": "ZAF", "year": 2022, "value": 67.6}, {"country": "South Korea", "code": "KOR", "year": 2022, "value": 85.22}, {"country": "South Sudan", "code": "SSD", "year": 2022, "value": 4.23}, {"country": "Spain", "code": "ESP", "year": 2022, "value": 43.25}, {"country": "Sri Lanka", "code": "LKA", "year": 2022, "value": 90.79}, {"country": "Sudan", "code": "SDN", "year": 2022, "value": 118.66}, {"country": "Suriname", "code": "SUR", "year": 2022, "value": 3.95}, {"country": "Sweden", "code": "SWE", "year": 2022, "value": 3.58}, {"country": "Switzerland", "code": "CHE", "year": 2022, "value": 6.5}, {"country": "Syria", "code": "SYR", "year": 2022, "value": 124.36}, {"country": "Tajikistan", "code": "TJK", "year": 2022, "value": 69.94}, {"country": "Tanzania", "code": "TZA", "year": 2022, "value": 12.96}, {"country": "Thailand", "code": "THA", "year": 2022, "value": 23.01}, {"country": "Togo", "code": "TGO", "year": 2022, "value": 3.39}, {"country": "Trinidad and Tobago", "code": "TTO", "year": 2022, "value": 20.33}, {"country": "Tunisia", "code": "TUN", "year": 2022, "value": 98.11}, {"country": "Turkey", "code": "TUR", "year": 2022, "value": 44.1}, {"country": "Turkmenistan", "code": "TKM", "year": 2022, "value": 135.21}, {"country": "Uganda", "code": "UGA", "year": 2022, "value": 5.83}, {"country": "Ukraine", "code": "UKR", "year": 2022, "value": 6.3}, {"country": "United Arab Emirates", "code": "ARE", "year": 2022, "value": 1509.93}, {"country": "United Kingdom", "code": "GBR", "year": 2022, "value": 14.35}, {"country": "United States", "code": "USA", "year": 2022, "value": 28.16}, {"country": "Uruguay", "code": "URY", "year": 2022, "value": 12.05}, {"country": "Uzbekistan", "code": "UZB", "year": 2022, "value": 121.84}, {"country": "Venezuela", "code": "VEN", "year": 2022, "value": 7.54}, {"country": "Vietnam", "code": "VNM", "year": 2022, "value": 18.13}, {"country": "World", "code": "OWID_WRL", "year": 2022, "value": 18.01}, {"country": "Yemen", "code": "YEM", "year": 2022, "value": 169.76}, {"country": "Zambia", "code": "ZMB", "year": 2022, "value": 2.84}, {"country": "Zimbabwe", "code": "ZWE", "year": 2022, "value": 46.09}];
+
+const codes = rawData.map(d => d.code);
+const values = rawData.map(d => d.value);
+const hoverTexts = rawData.map(d => {
+  const v = d.value;
+  let cat;
+  if (v < 10) cat = "Low stress";
+  else if (v < 25) cat = "Low–medium stress";
+  else if (v < 70) cat = "Medium–high stress";
+  else if (v <= 100) cat = "High stress";
+  else cat = "Exceeds renewable supply";
+  return `<b>${d.country}</b><br><span style="font-size:15px;font-weight:600">${v.toFixed(1)}%</span> of internal freshwater<br><span style="color:#ccc">${cat}</span><extra></extra>`;
+});
+
+// OWID-inspired warm diverging scale: blue (low) → yellow → orange → deep red (extreme)
+const colorscale = [
+  [0.000, "#e8f4f8"],
+  [0.025, "#b8dce8"],
+  [0.050, "#7ebdd4"],
+  [0.100, "#fed976"],
+  [0.175, "#feb24c"],
+  [0.250, "#fd8d3c"],
+  [0.400, "#f03b20"],
+  [0.600, "#bd0026"],
+  [1.000, "#4a0010"]
+];
+
+// Cap at 200 for color mapping; real values shown in tooltip
+const cappedValues = values.map(v => Math.min(v, 200));
+
+const trace = {
+  type: "choropleth",
+  locations: codes,
+  z: cappedValues,
+  customdata: values,
+  hovertemplate: hoverTexts,
+  colorscale: colorscale,
+  zmin: 0,
+  zmax: 200,
+  marker: { line: { color: "#fff", width: 0.5 } },
+  colorbar: {
+    title: { text: "% of renewable<br>freshwater", font: { size: 10, color: "#666" }, side: "right" },
+    tickvals: [0, 25, 50, 75, 100, 150, 200],
+    ticktext: ["0%", "25%", "50%", "75%", "100%", "150%", "≥200%"],
+    tickfont: { size: 10, color: "#777" },
+    len: 0.75,
+    thickness: 12,
+    x: 1.005,
+    xpad: 4,
+    outlinewidth: 0,
+    bgcolor: "rgba(255,255,255,0.85)"
+  }
+};
+
+const layout = {
+  geo: {
+    showframe: false,
+    showcoastlines: true,
+    coastlinecolor: "#ccc",
+    coastlinewidth: 0.3,
+    showland: true,
+    landcolor: "#f2f2f2",
+    showocean: true,
+    oceancolor: "#fafcfe",
+    showcountries: true,
+    countrycolor: "#e0e0e0",
+    countrywidth: 0.3,
+    showlakes: false,
+    projection: { type: "natural earth" },
+    lonaxis: { range: [-150, 175] },
+    lataxis: { range: [-55, 78] },
+    bgcolor: "rgba(0,0,0,0)"
+  },
+  margin: { t: 0, b: 0, l: 0, r: 48 },
+  paper_bgcolor: "rgba(0,0,0,0)",
+  height: 420,
+  dragmode: false,
+  hoverlabel: {
+    bgcolor: "#1a1a2e",
+    bordercolor: "rgba(0,0,0,0)",
+    font: { family: "Source Sans 3, Helvetica Neue, sans-serif", size: 13, color: "#f0f0f0" }
+  }
+};
+
+const config = {
+  displayModeBar: false,
+  responsive: true,
+  scrollZoom: false
+};
+
+Plotly.newPlot("map", [trace], layout, config).then(() => {
+  document.getElementById("loading").style.display = "none";
+});
+</script>
+</body>
+</html>
